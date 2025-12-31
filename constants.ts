@@ -1,7 +1,7 @@
 
 import { Category, PaymentSettings } from './types';
 
-export const CATEGORIES: Category[] = ['Formal', 'Luxury', 'Smart', 'Sports', 'Kids', 'Stylish'];
+export const CATEGORIES: Category[] = ['Formal', 'Casual', 'Luxurious', 'Smart', 'Sports', 'Kids', 'Stylish'];
 
 export const DEFAULT_PAYMENT_SETTINGS: PaymentSettings = {
   bkashNumber: '01700000000',

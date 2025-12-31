@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { CATEGORIES } from '../constants';
-import { Product, Order, OrderItem } from '../types';
+import { Product, Order, OrderItem, Category } from '../types';
 import { ProfileView } from './Profile';
 import { MessageCenter } from './MessageCenter';
 
@@ -13,7 +13,7 @@ interface ShopProps {
 export const ShopView: React.FC<ShopProps> = ({ store, onSwitchToAdmin }) => {
   const [view, setView] = useState<'HOME' | 'PROFILE' | 'MESSAGES' | 'DETAIL'>('HOME');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedColor, setSelectedColor] = useState<string>('');
@@ -23,7 +23,6 @@ export const ShopView: React.FC<ShopProps> = ({ store, onSwitchToAdmin }) => {
   const [deliveryMethod, setDeliveryMethod] = useState<'Standard' | 'Premium'>('Standard');
 
   // Available brands for filtering
-  // Fix: Explicitly type the brands array to string[] to resolve 'unknown' type issues in the map function below.
   const brands = useMemo<string[]>(() => {
     if (!store.products) return [];
     const uniqueBrands = new Set<string>((store.products as Product[]).map((p: Product) => p.brand));
@@ -109,7 +108,7 @@ export const ShopView: React.FC<ShopProps> = ({ store, onSwitchToAdmin }) => {
             >
               AURAX
             </h1>
-            <div className="hidden lg:flex items-center gap-8 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
+            <div className="hidden lg:flex items-center gap-6 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
                {CATEGORIES.map(cat => (
                  <button 
                   key={cat} 
@@ -134,8 +133,11 @@ export const ShopView: React.FC<ShopProps> = ({ store, onSwitchToAdmin }) => {
               />
               <svg className="w-4 h-4 absolute right-5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             </div>
-            <button onClick={() => setView('PROFILE')} className="hover:text-gray-400 transition p-2">
+            <button onClick={() => setView('PROFILE')} className="hover:text-gray-400 transition p-2 relative">
               <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+              {store.notifications.filter((n: any) => n.userId === store.currentUser?.id && !n.read).length > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              )}
             </button>
             <button onClick={() => setIsCartOpen(true)} className="relative hover:text-gray-400 transition p-2">
               <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
@@ -152,43 +154,86 @@ export const ShopView: React.FC<ShopProps> = ({ store, onSwitchToAdmin }) => {
         {view === 'HOME' && (
           <div className="max-w-7xl mx-auto px-6 py-8 md:py-16">
             {!searchTerm && !selectedCategory && !selectedBrand && (
-              <div className="relative h-[400px] md:h-[600px] rounded-[32px] md:rounded-[48px] overflow-hidden mb-16 md:mb-24 aurax-gradient shadow-2xl">
-                <div className="absolute inset-0 opacity-50 grayscale hover:grayscale-0 transition-all duration-1000">
-                  <img src="https://images.unsplash.com/photo-1547996160-81dfa63595aa?q=80&w=1600&auto=format&fit=crop" className="w-full h-full object-cover" />
+              <>
+                <div className="relative h-[400px] md:h-[600px] rounded-[32px] md:rounded-[48px] overflow-hidden mb-16 md:mb-24 aurax-gradient shadow-2xl">
+                  <div className="absolute inset-0 opacity-50 grayscale hover:grayscale-0 transition-all duration-1000">
+                    <img src="https://images.unsplash.com/photo-1547996160-81dfa63595aa?q=80&w=1600&auto=format&fit=crop" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent flex flex-col justify-center px-10 md:px-20 text-white z-10">
+                    <p className="text-[10px] md:text-xs font-bold tracking-[0.4em] uppercase mb-4 md:mb-6 opacity-60">Spring Collection 2024</p>
+                    <h2 className="text-4xl md:text-7xl font-black mb-6 md:mb-8 leading-[1] tracking-tighter">THE ART OF<br/>HOROLOGY.</h2>
+                    <p className="max-w-md text-gray-300 text-sm md:text-lg mb-8 md:mb-10 font-light leading-relaxed">Discover a world where precision meets timeless elegance. Hand-picked models for the discerning collector.</p>
+                    <button onClick={() => setSelectedCategory('Luxurious')} className="bg-white text-black w-fit px-8 md:px-12 py-4 md:py-5 rounded-2xl font-black text-xs md:text-sm tracking-widest hover:scale-105 transition active:scale-95 shadow-xl">EXPLORE LUXURIOUS</button>
+                  </div>
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent flex flex-col justify-center px-10 md:px-20 text-white z-10">
-                  <p className="text-[10px] md:text-xs font-bold tracking-[0.4em] uppercase mb-4 md:mb-6 opacity-60">Spring Collection 2024</p>
-                  <h2 className="text-4xl md:text-7xl font-black mb-6 md:mb-8 leading-[1] tracking-tighter">THE ART OF<br/>HOROLOGY.</h2>
-                  <p className="max-w-md text-gray-300 text-sm md:text-lg mb-8 md:mb-10 font-light leading-relaxed">Discover a world where precision meets timeless elegance. Hand-picked models for the discerning collector.</p>
-                  <button onClick={() => setSelectedCategory('Luxury')} className="bg-white text-black w-fit px-8 md:px-12 py-4 md:py-5 rounded-2xl font-black text-xs md:text-sm tracking-widest hover:scale-105 transition active:scale-95 shadow-xl">EXPLORE LUXURY</button>
+
+                {/* Browse by Category Section */}
+                <div className="mb-24">
+                  <h3 className="text-2xl font-black mb-10 tracking-tighter uppercase">Browse by Category</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                    {CATEGORIES.map(cat => (
+                      <button 
+                        key={cat}
+                        onClick={() => setSelectedCategory(cat)}
+                        className="group flex flex-col items-center p-6 bg-gray-50 rounded-[32px] hover:bg-black hover:text-white transition-all duration-300"
+                      >
+                        <div className="w-12 h-12 mb-4 bg-white rounded-2xl flex items-center justify-center group-hover:bg-white/10 transition">
+                           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                           </svg>
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest">{cat}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              </>
             )}
 
             {/* Filter Bar */}
-            <div className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div>
-                <h4 className="text-3xl md:text-4xl font-black tracking-tighter uppercase">
-                  {searchTerm ? `Results for "${searchTerm}"` : (selectedBrand ? selectedBrand : (selectedCategory || 'The Collection'))}
-                </h4>
-                <div className="h-1.5 w-24 bg-black mt-4"></div>
-              </div>
-              
-              <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-                <button 
-                  onClick={() => { setSelectedBrand(null); setSelectedCategory(null); }}
-                  className={`px-5 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition ${!selectedBrand && !selectedCategory ? 'bg-black text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
-                >
-                  All
-                </button>
-                {/* Fix: Map over explicitly typed brands array to ensure each 'brand' is treated as a string */}
-                {brands.map(brand => (
+            <div className="mb-12">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                <div>
+                  <h4 className="text-3xl md:text-4xl font-black tracking-tighter uppercase">
+                    {searchTerm ? `Results for "${searchTerm}"` : (selectedBrand ? selectedBrand : (selectedCategory || 'The Collection'))}
+                  </h4>
+                  <div className="h-1.5 w-24 bg-black mt-4"></div>
+                </div>
+                
+                <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
                   <button 
-                    key={brand}
-                    onClick={() => { setSelectedBrand(brand); setSelectedCategory(null); }}
-                    className={`px-5 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition ${selectedBrand === brand ? 'bg-black text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                    onClick={() => { setSelectedBrand(null); setSelectedCategory(null); }}
+                    className={`px-5 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition ${!selectedBrand && !selectedCategory ? 'bg-black text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
                   >
-                    {brand}
+                    All Brands
+                  </button>
+                  {brands.map(brand => (
+                    <button 
+                      key={brand}
+                      onClick={() => { setSelectedBrand(brand); setSelectedCategory(null); }}
+                      className={`px-5 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition ${selectedBrand === brand ? 'bg-black text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                    >
+                      {brand}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Category Quick Filter Scroller */}
+              <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar border-b border-gray-100">
+                <button 
+                  onClick={() => setSelectedCategory(null)}
+                  className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${!selectedCategory ? 'bg-gray-100 text-black' : 'text-gray-300 hover:text-black'}`}
+                >
+                  All Categories
+                </button>
+                {CATEGORIES.map(cat => (
+                  <button 
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${selectedCategory === cat ? 'bg-gray-100 text-black' : 'text-gray-300 hover:text-black'}`}
+                  >
+                    {cat}
                   </button>
                 ))}
               </div>
@@ -475,7 +520,7 @@ export const ShopView: React.FC<ShopProps> = ({ store, onSwitchToAdmin }) => {
       )}
 
       {/* Footer */}
-      <footer className="bg-black text-white pt-24 pb-12 px-6 md:px-10">
+      <footer className="bg-black text-white pt-24 pb-12 px-6 md:px-10 mt-auto">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-16 md:gap-20 border-b border-white/5 pb-20 mb-12">
             <div className="md:col-span-2">
@@ -490,7 +535,7 @@ export const ShopView: React.FC<ShopProps> = ({ store, onSwitchToAdmin }) => {
             <div>
                <h4 className="font-black text-[10px] uppercase tracking-[0.3em] mb-10 text-gray-400">Discover</h4>
                <ul className="space-y-4 text-sm text-gray-500 font-medium">
-                  {CATEGORIES.slice(0, 4).map(c => <li key={c} className="hover:text-white transition cursor-pointer">{c} Collection</li>)}
+                  {CATEGORIES.slice(0, 4).map(c => <li key={c} onClick={() => setSelectedCategory(c)} className="hover:text-white transition cursor-pointer">{c} Collection</li>)}
                   <li className="hover:text-white transition cursor-pointer">Archive</li>
                </ul>
             </div>

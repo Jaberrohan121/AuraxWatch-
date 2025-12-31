@@ -22,7 +22,7 @@ const INITIAL_PRODUCTS: Product[] = [
     color: 'Oystersteel',
     availableColors: ['Oystersteel', 'Yellow Gold', 'Oystersteel and Gold'],
     age: 'Adult',
-    category: 'Luxury',
+    category: 'Luxurious',
     description: 'The archetype of the diver’s watch, the Submariner has been a reference in its category for over 70 years. Renowned for its robustness and functional design, it is as at home underwater as it is at a gala event.',
     price: 12500,
     originalPrice: 15500,
@@ -48,7 +48,7 @@ const INITIAL_PRODUCTS: Product[] = [
     color: 'Blue',
     availableColors: ['Blue', 'White', 'Olive Green'],
     age: 'Adult',
-    category: 'Luxury',
+    category: 'Luxurious',
     description: 'With its rounded octagonal bezel and horizontal embossed dial, the Nautilus has been the personification of the elegant sports watch since 1976.',
     price: 95000,
     originalPrice: 110000,
@@ -135,7 +135,12 @@ export const useStore = () => {
       const savedCurrentUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
       const savedNotifications = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
 
-      if (savedProducts) setProducts(JSON.parse(savedProducts));
+      if (savedProducts) {
+        const parsed = JSON.parse(savedProducts);
+        // Migrating old 'Luxury' to 'Luxurious'
+        const migrated = parsed.map((p: any) => p.category === 'Luxury' ? { ...p, category: 'Luxurious' } : p);
+        setProducts(migrated);
+      }
       else {
         setProducts(INITIAL_PRODUCTS);
         localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));

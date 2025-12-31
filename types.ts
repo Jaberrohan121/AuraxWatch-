@@ -1,5 +1,5 @@
 
-export type Category = 'Formal' | 'Luxury' | 'Smart' | 'Sports' | 'Kids' | 'Stylish';
+export type Category = 'Formal' | 'Casual' | 'Luxurious' | 'Smart' | 'Sports' | 'Kids' | 'Stylish';
 
 export interface Product {
   id: string;

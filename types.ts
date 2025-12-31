@@ -7,12 +7,17 @@ export interface Product {
   brand: string;
   model: string;
   color: string;
+  availableColors?: string[];
   age: string;
   category: Category;
   description: string;
   price: number;
+  originalPrice?: number;
   image: string;
   stock: number;
+  rating?: number;
+  reviewsCount?: number;
+  specs?: Record<string, string>;
 }
 
 export type OrderStatus = 'PENDING' | 'WAITING_APPROVAL' | 'AWAITING_PAYMENT' | 'PAID' | 'SHIPPED' | 'CANCELLED';
@@ -22,6 +27,7 @@ export interface OrderItem {
   name: string;
   quantity: number;
   unitPrice: number;
+  selectedColor?: string;
 }
 
 export interface Order {
@@ -34,7 +40,7 @@ export interface Order {
   total: number;
   status: OrderStatus;
   deliveryMethod: 'Standard' | 'Premium';
-  deliveryDays?: number; // Added: Delivery estimation in days
+  deliveryDays?: number;
   paymentMethod: 'bKash' | 'Nagad' | 'Cash on Delivery';
   createdAt: number;
   updatedAt: number;
@@ -59,10 +65,20 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+export interface AppNotification {
+  id: string;
+  userId: string; // 'admin' or specific userId
+  title: string;
+  message: string;
+  type: 'INFO' | 'SUCCESS' | 'WARNING';
+  read: boolean;
+  timestamp: number;
+}
+
 export interface PaymentSettings {
   bkashNumber: string;
   nagadNumber: string;
-  adminPhone: string; // Added: Admin contact number
+  adminPhone: string;
   standardDeliveryFee: number;
   premiumDeliveryFee: number;
   vatPercentage: number;

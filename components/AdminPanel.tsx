@@ -9,13 +9,14 @@ interface AdminProps {
 }
 
 export const AdminPanel: React.FC<AdminProps> = ({ store, onSwitchToShop }) => {
-  const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'PRODUCTS' | 'ORDERS' | 'SETTINGS' | 'NOTIFS'>('DASHBOARD');
+  const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'PRODUCTS' | 'ORDERS' | 'SETTINGS' | 'NOTIFS' | 'USERS'>('DASHBOARD');
   
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [processingOrder, setProcessingOrder] = useState<Order | null>(null);
   const [vatInput, setVatInput] = useState(0);
   const [deliveryInput, setDeliveryInput] = useState(0);
+  const [selectedUserDetail, setSelectedUserDetail] = useState<User | null>(null);
 
   const [settings, setSettings] = useState<PaymentSettings>(store.settings);
 
@@ -45,6 +46,11 @@ export const AdminPanel: React.FC<AdminProps> = ({ store, onSwitchToShop }) => {
 
   const pendingOrdersCount = store.orders.filter((o: Order) => o.status === 'PENDING' || o.status === 'WAITING_APPROVAL').length;
 
+  // Helper to get user orders
+  const getUserOrders = (userId: string) => {
+    return store.orders.filter((o: Order) => o.userId === userId);
+  };
+
   return (
     <div className="flex h-screen bg-gray-50 text-gray-900">
       <aside className="w-80 bg-white border-r border-gray-100 flex flex-col p-10">
@@ -54,12 +60,16 @@ export const AdminPanel: React.FC<AdminProps> = ({ store, onSwitchToShop }) => {
              { id: 'DASHBOARD', label: 'Overview' },
              { id: 'PRODUCTS', label: 'Inventory' },
              { id: 'ORDERS', label: 'Order Pipeline' },
+             { id: 'USERS', label: 'User Directory' },
              { id: 'NOTIFS', label: 'System Alerts' },
              { id: 'SETTINGS', label: 'Master Config' }
            ].map(tab => (
              <button 
                key={tab.id}
-               onClick={() => setActiveTab(tab.id as any)}
+               onClick={() => {
+                 setActiveTab(tab.id as any);
+                 setSelectedUserDetail(null);
+               }}
                className={`w-full text-left px-8 py-5 rounded-3xl font-black text-[11px] uppercase tracking-widest transition-all relative ${activeTab === tab.id ? 'bg-black text-white shadow-xl' : 'text-gray-400 hover:bg-gray-50'}`}
              >
                {tab.label}
@@ -76,7 +86,9 @@ export const AdminPanel: React.FC<AdminProps> = ({ store, onSwitchToShop }) => {
 
       <main className="flex-1 overflow-y-auto p-16">
          <header className="flex justify-between items-center mb-12">
-            <h2 className="text-4xl font-black uppercase tracking-tighter">{activeTab}</h2>
+            <h2 className="text-4xl font-black uppercase tracking-tighter">
+              {activeTab === 'USERS' && selectedUserDetail ? 'User Detail' : activeTab}
+            </h2>
             <div className="flex items-center gap-4 bg-white px-6 py-3 rounded-2xl shadow-sm border border-gray-100">
                <div className="w-8 h-8 rounded-xl bg-black text-white flex items-center justify-center font-black text-xs">A</div>
                <span className="text-xs font-bold uppercase tracking-widest">Main Admin</span>
@@ -84,10 +96,10 @@ export const AdminPanel: React.FC<AdminProps> = ({ store, onSwitchToShop }) => {
          </header>
 
          {activeTab === 'DASHBOARD' && (
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               <div className="bg-white p-10 rounded-[32px] shadow-sm border border-gray-100">
                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Total Revenue</p>
-                 <p className="text-5xl font-black">${store.orders.filter((o: any) => o.status === 'PAID' || o.status === 'SHIPPED').reduce((a: any, b: any) => a + b.total, 0)}</p>
+                 <p className="text-5xl font-black">${store.orders.filter((o: any) => o.status === 'PAID' || o.status === 'SHIPPED').reduce((a: any, b: any) => a + b.total, 0).toLocaleString()}</p>
               </div>
               <div className="bg-white p-10 rounded-[32px] shadow-sm border border-gray-100">
                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Action Required</p>
@@ -97,7 +109,132 @@ export const AdminPanel: React.FC<AdminProps> = ({ store, onSwitchToShop }) => {
                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Catalog Size</p>
                  <p className="text-5xl font-black">{store.products.length}</p>
               </div>
+              <div className="bg-white p-10 rounded-[32px] shadow-sm border border-gray-100">
+                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Registered Users</p>
+                 <p className="text-5xl font-black">{store.users.length}</p>
+              </div>
            </div>
+         )}
+
+         {activeTab === 'USERS' && !selectedUserDetail && (
+           <div className="bg-white rounded-[32px] shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-10 border-b border-gray-50 flex justify-between items-center">
+                 <h3 className="font-bold text-xl uppercase tracking-tighter">User Directory</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs uppercase tracking-widest font-bold">
+                   <thead className="bg-gray-50 text-gray-400 border-b border-gray-100">
+                      <tr>
+                         <th className="px-10 py-6">Member</th>
+                         <th className="px-10 py-6">Email</th>
+                         <th className="px-10 py-6">Role</th>
+                         <th className="px-10 py-6">Orders</th>
+                         <th className="px-10 py-6 text-right">Profile</th>
+                      </tr>
+                   </thead>
+                   <tbody className="divide-y divide-gray-50">
+                      {store.users.map((u: User) => (
+                        <tr key={u.id} className="hover:bg-gray-50 transition cursor-pointer" onClick={() => setSelectedUserDetail(u)}>
+                           <td className="px-10 py-6">
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-black">
+                                {u.fullName.charAt(0)}
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-black font-black">{u.fullName}</span>
+                                <span className="text-[9px] text-gray-400">{u.phone}</span>
+                              </div>
+                            </div>
+                           </td>
+                           <td className="px-10 py-6 text-gray-500 lowercase">{u.email}</td>
+                           <td className="px-10 py-6">
+                              <span className={`px-2 py-1 rounded-lg text-[8px] ${u.role === 'ADMIN' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'}`}>{u.role}</span>
+                           </td>
+                           <td className="px-10 py-6 text-gray-500">{getUserOrders(u.id).length} Orders</td>
+                           <td className="px-10 py-6 text-right">
+                              <button className="text-black hover:opacity-50 transition">
+                                <svg className="w-5 h-5 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                              </button>
+                           </td>
+                        </tr>
+                      ))}
+                   </tbody>
+                </table>
+              </div>
+           </div>
+         )}
+
+         {activeTab === 'USERS' && selectedUserDetail && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+               <button onClick={() => setSelectedUserDetail(null)} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest mb-10 hover:opacity-50 transition">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
+                  Back to Directory
+               </button>
+
+               <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                  <div className="lg:col-span-1 space-y-8">
+                     <div className="bg-white p-10 rounded-[40px] shadow-sm border border-gray-100 flex flex-col items-center text-center">
+                        <div className="w-24 h-24 bg-black text-white rounded-[32px] flex items-center justify-center text-3xl font-black mb-6 shadow-xl">
+                           {selectedUserDetail.fullName.charAt(0)}
+                        </div>
+                        <h3 className="text-2xl font-black tracking-tight">{selectedUserDetail.fullName}</h3>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">{selectedUserDetail.email}</p>
+                        <div className="w-full h-px bg-gray-100 my-8"></div>
+                        <div className="w-full space-y-4 text-left">
+                           <div>
+                              <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-1">Contact Phone</p>
+                              <p className="font-bold text-sm">{selectedUserDetail.phone}</p>
+                           </div>
+                           <div>
+                              <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-1">Default Address</p>
+                              <p className="font-bold text-sm">{selectedUserDetail.address}</p>
+                           </div>
+                           <div>
+                              <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-1">Membership Date</p>
+                              <p className="font-bold text-sm">{new Date(selectedUserDetail.createdAt).toLocaleDateString()}</p>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+
+                  <div className="lg:col-span-2 space-y-8">
+                     <div className="bg-white rounded-[40px] shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="p-10 border-b border-gray-50">
+                           <h3 className="font-black text-xl uppercase tracking-tighter">Acquisition Records</h3>
+                        </div>
+                        <div className="p-10">
+                           {getUserOrders(selectedUserDetail.id).length === 0 ? (
+                              <p className="text-center py-20 text-gray-400 italic">No acquisitions found for this member.</p>
+                           ) : (
+                              <div className="space-y-6">
+                                 {getUserOrders(selectedUserDetail.id).sort((a:any, b:any) => b.createdAt - a.createdAt).map((o: Order) => (
+                                    <div key={o.id} className="p-6 rounded-3xl border border-gray-50 bg-gray-50/30 hover:bg-white hover:shadow-md transition group">
+                                       <div className="flex justify-between items-start mb-4">
+                                          <div>
+                                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{o.id}</p>
+                                             <h4 className="font-black text-sm uppercase">{o.items[0]?.name} {o.items.length > 1 ? `+ ${o.items.length - 1} more` : ''}</h4>
+                                          </div>
+                                          <span className={`px-3 py-1 rounded-xl text-[8px] font-black uppercase tracking-widest ${
+                                             o.status === 'SHIPPED' ? 'bg-black text-white' :
+                                             o.status === 'PAID' ? 'bg-green-100 text-green-700' :
+                                             'bg-gray-100 text-gray-500'
+                                          }`}>{o.status.replace('_', ' ')}</span>
+                                       </div>
+                                       <div className="flex justify-between items-end">
+                                          <div className="text-[10px] text-gray-400 font-bold">
+                                             {new Date(o.createdAt).toLocaleDateString()} via {o.deliveryMethod}
+                                          </div>
+                                          <div className="text-xl font-black tracking-tighter">${o.total.toLocaleString()}</div>
+                                       </div>
+                                    </div>
+                                 ))}
+                              </div>
+                           )}
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
          )}
 
          {activeTab === 'NOTIFS' && (
@@ -136,7 +273,7 @@ export const AdminPanel: React.FC<AdminProps> = ({ store, onSwitchToShop }) => {
                               'bg-gray-50 text-gray-400'
                             }`}>{o.status.replace('_', ' ')}</span>
                          </div>
-                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">User: {o.userId} • Total: ${o.total || 'Calculating...'}</p>
+                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">User: {o.userId} • Total: ${o.total > 0 ? o.total.toLocaleString() : 'Calculating...'}</p>
                       </div>
                    </div>
                    
@@ -204,7 +341,7 @@ export const AdminPanel: React.FC<AdminProps> = ({ store, onSwitchToShop }) => {
                               </div>
                             </div>
                            </td>
-                           <td className="px-10 py-6 font-black text-sm">${p.price}</td>
+                           <td className="px-10 py-6 font-black text-sm">${p.price.toLocaleString()}</td>
                            <td className="px-10 py-6 text-gray-500">{p.stock} units</td>
                            <td className="px-10 py-6 text-right">
                               <div className="flex justify-end gap-2">
@@ -297,7 +434,7 @@ export const AdminPanel: React.FC<AdminProps> = ({ store, onSwitchToShop }) => {
             <div className="relative bg-white p-12 rounded-[40px] w-full max-w-lg shadow-2xl animate-in zoom-in duration-300">
                <h3 className="text-3xl font-black mb-10 tracking-tighter uppercase">Finalization</h3>
                <div className="space-y-6 mb-12">
-                  <div className="flex justify-between items-center text-sm uppercase tracking-widest font-bold text-gray-400"><span>Base:</span> <span className="text-black font-black text-xl">${processingOrder.subtotal}</span></div>
+                  <div className="flex justify-between items-center text-sm uppercase tracking-widest font-bold text-gray-400"><span>Base:</span> <span className="text-black font-black text-xl">${processingOrder.subtotal.toLocaleString()}</span></div>
                   <div className="space-y-6">
                      <div>
                         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Custom VAT ($)</label>
@@ -310,7 +447,7 @@ export const AdminPanel: React.FC<AdminProps> = ({ store, onSwitchToShop }) => {
                   </div>
                   <div className="pt-8 border-t border-gray-100 flex justify-between items-end">
                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Final Quote:</span>
-                     <span className="text-5xl font-black tracking-tighter">${processingOrder.subtotal + vatInput + deliveryInput}</span>
+                     <span className="text-5xl font-black tracking-tighter">${(processingOrder.subtotal + vatInput + deliveryInput).toLocaleString()}</span>
                   </div>
                </div>
                <button 
